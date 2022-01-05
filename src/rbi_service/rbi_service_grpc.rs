@@ -1,3 +1,4 @@
+use log::info;
 use rbi_service::rbi_service_server::{RbiService, RbiServiceServer};
 use rbi_service::{RbiQueryRequest, RbiQueryResponse, RbiAddRecordRequest, RbiAddRecordResponse};
 use tonic::{transport::Server, Request, Response, Status};
@@ -38,13 +39,13 @@ impl RbiService for RbiServ {
         request: Request<RbiQueryRequest>,
     ) -> Result<Response<RbiQueryResponse>, Status> {
         let id = request.into_inner().id;
-        println!("[GRPC] Got a new query request. id: {}", id);
+        info!("[GRPC] Got a new query request. id: {}", id);
 
         let search_res = self.cache.search(id.clone());
 
         match search_res {
             Ok(s) => {
-                println!("[GRPC] Query successeed. id: {}, sha256: {}", id, s);
+                info!("[GRPC] Query successeed. id: {}, sha256: {}", id, s);
                 let res = RbiQueryResponse {
                     state: 0,
                     response: s.into_bytes(),
@@ -52,7 +53,7 @@ impl RbiService for RbiServ {
                 Ok(Response::new(res))
             }
             Err(e) => {
-                println!("[GRPC] Query failed. id: {}", id);
+                info!("[GRPC] Query failed. id: {}", id);
                 let res = RbiQueryResponse {
                     state: 1,
                     response: e.to_string().into_bytes(),
@@ -71,16 +72,16 @@ impl RbiService for RbiServ {
         let id = req.id;
         let content = req.file;
         let class = req.class;
-        println!("[GRPC] Got a new add-record request. id: {}, class: {}", id, class);
+        info!("[GRPC] Got a new add-record request. id: {}, class: {}", id, class);
         match self.add(&id, &class, &content) {
             Ok(r) => {
-                println!("[GRPC] Record added successfully. id: {}, sha256: {}", id, r);
+                info!("[GRPC] Record added successfully. id: {}, sha256: {}", id, r);
                 Ok(Response::new(RbiAddRecordResponse {
                     response: r.as_bytes().to_vec(),
                 }))
             },
             Err(e) => {
-                println!("[GRPC] Record failed to add. id: {}, err: {}", id, (*e).to_string());
+                info!("[GRPC] Record failed to add. id: {}, err: {}", id, (*e).to_string());
                 Ok(Response::new(RbiAddRecordResponse {
                     response: (*e).to_string().as_bytes().to_vec(),
                 }))
