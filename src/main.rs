@@ -1,9 +1,10 @@
 #![allow(non_upper_case_globals)]
 
+use log::{info, LevelFilter};
 use shadow_rs::shadow;
 use std::collections::HashMap;
 use std::error::Error;
-use clap::{App, Arg};
+use clap::{App, Arg, crate_version};
 
 mod rbi_service;
 mod rvps_handlers;
@@ -34,17 +35,18 @@ fn get_address(m: &HashMap<String, String>) -> String {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let version = format!(
-        "v{}\ncommit: {}\nbuildtime: {}",
-        build::PKG_VERSION,
-        build::COMMIT_HASH,
-        build::BUILD_TIME
-    );
-    println!("RBI info: {}", version);
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .init();
+    
+    info!("Reproducible Build Infrastructure");
+    info!("Version: {}", build::PKG_VERSION);
+    info!("Commit: {}", build::COMMIT_HASH);
+    info!("Build Time: {}", build::BUILD_TIME);
 
     let matches = App::new("RBI")
-        .version(version.as_str())
-        .long_version(version.as_str())
+        .version(crate_version!())
+        .long_version(crate_version!())
         .author("Inclavare-Containers Team")
         .arg(
             Arg::with_name("config")
@@ -71,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let kv_type = get_kvtype(&settings);
     let kv_store = cache::new(&kv_type)?;
     let grpc_addr = get_address(&settings);
-    println!("Listen gRPC server addr: {}", grpc_addr);
+    info!("Listen gRPC server addr: {}", grpc_addr);
 
     let rbi_server = rbi_service::rbi_service_grpc::server(&grpc_addr, kv_store);
 

@@ -1,9 +1,11 @@
+use log::info;
+
 use super::error::{Kind,Error};
 use std::{path, fs::File, io::Write};
 use std::process::Command;
 
 pub fn handler(file: &Vec<u8>) -> Result<String, Box<dyn std::error::Error>> {
-    println!("[in-toto] Got a new tar file to verify...");
+    info!("[in-toto] Got a new tar file to verify...");
     let dir = tempfile::tempdir()?;
 
     let file_path = &dir.path().join("in_toto.tar.gz");
@@ -15,7 +17,7 @@ pub fn handler(file: &Vec<u8>) -> Result<String, Box<dyn std::error::Error>> {
     untar(filename, &dir.path().to_str().unwrap())?;
     let res = check(&dir.path())?;
     dir.close()?;
-    println!("[in-toto] Verification succeeded!");
+    info!("[in-toto] Verification succeeded!");
     Ok(res)
 }
 
